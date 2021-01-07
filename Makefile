@@ -22,6 +22,10 @@ default: gen fmt set-license goimports lint test
 .PHONY: tools
 tools:
 	go get github.com/99designs/gqlgen
+	go get golang.org/x/tools/cmd/goimports
+	go get github.com/sacloud/addlicense
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.23.8/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.23.8
+
 
 .PHONY: run
 run:
