@@ -12,6 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+directive @goModel(model: String, models: [String!]) on OBJECT
+  | INPUT_OBJECT
+  | SCALAR
+  | ENUM
+  | INTERFACE
+  | UNION
+
+directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
+  | FIELD_DEFINITION
+
 type Server {
   id: ID!
   name: String!
@@ -28,7 +38,7 @@ type Server {
   planGeneration: Int!
   instanceHostName: String!
   instanceStatus: String!
-  disks: [Disk!]
+  disks: [Disk!] @goField(forceResolver: true)
 }
 
 type Disk {

@@ -67,7 +67,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ShutdownServer func(childComplexity int, zone string, id string, option *model.ShutdownOption) int
+		ShutdownServer func(childComplexity int, zone string, id int64, option *model.ShutdownOption) int
 	}
 
 	MutationResult struct {
@@ -99,7 +99,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	ShutdownServer(ctx context.Context, zone string, id string, option *model.ShutdownOption) (*model.MutationResult, error)
+	ShutdownServer(ctx context.Context, zone string, id int64, option *model.ShutdownOption) (*model.MutationResult, error)
 }
 type QueryResolver interface {
 	Servers(ctx context.Context, zone string) ([]*model.Server, error)
@@ -168,7 +168,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ShutdownServer(childComplexity, args["zone"].(string), args["id"].(string), args["option"].(*model.ShutdownOption)), true
+		return e.complexity.Mutation.ShutdownServer(childComplexity, args["zone"].(string), args["id"].(int64), args["option"].(*model.ShutdownOption)), true
 
 	case "MutationResult.success":
 		if e.complexity.MutationResult.Success == nil {
@@ -379,6 +379,16 @@ var sources = []*ast.Source{
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+directive @goModel(model: String, models: [String!]) on OBJECT
+  | INPUT_OBJECT
+  | SCALAR
+  | ENUM
+  | INTERFACE
+  | UNION
+
+directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
+  | FIELD_DEFINITION
+
 type Server {
   id: ID!
   name: String!
@@ -395,7 +405,7 @@ type Server {
   planGeneration: Int!
   instanceHostName: String!
   instanceStatus: String!
-  disks: [Disk!]
+  disks: [Disk!] @goField(forceResolver: true)
 }
 
 type Disk {
@@ -442,10 +452,10 @@ func (ec *executionContext) field_Mutation_shutdownServer_args(ctx context.Conte
 		}
 	}
 	args["zone"] = arg0
-	var arg1 string
+	var arg1 int64
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		arg1, err = ec.unmarshalNID2int64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -561,9 +571,9 @@ func (ec *executionContext) _Disk_id(ctx context.Context, field graphql.Collecte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Disk_name(ctx context.Context, field graphql.CollectedField, obj *model.Disk) (ret graphql.Marshaler) {
@@ -731,7 +741,7 @@ func (ec *executionContext) _Mutation_shutdownServer(ctx context.Context, field 
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ShutdownServer(rctx, args["zone"].(string), args["id"].(string), args["option"].(*model.ShutdownOption))
+		return ec.resolvers.Mutation().ShutdownServer(rctx, args["zone"].(string), args["id"].(int64), args["option"].(*model.ShutdownOption))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -926,9 +936,9 @@ func (ec *executionContext) _Server_id(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Server_name(ctx context.Context, field graphql.CollectedField, obj *model.Server) (ret graphql.Marshaler) {
@@ -1171,9 +1181,9 @@ func (ec *executionContext) _Server_planID(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Server_planName(ctx context.Context, field graphql.CollectedField, obj *model.Server) (ret graphql.Marshaler) {
@@ -3095,13 +3105,13 @@ func (ec *executionContext) marshalNDisk2ᚖgithubᚗcomᚋsacloudᚋgqlpᚋgrap
 	return ec._Disk(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalID(v)
+func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalID(v)
+func (ec *executionContext) marshalNID2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3539,6 +3549,42 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

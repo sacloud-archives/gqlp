@@ -28,14 +28,17 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
+var httpClient = &http.Client{Transport: http.DefaultTransport}
+
 type Resolver struct{}
 
 func (r *Resolver) APICaller() sacloud.APICaller {
 	return api.NewCaller(&api.CallerOptions{
 		AccessToken:          os.Getenv("SAKURACLOUD_ACCESS_TOKEN"),
 		AccessTokenSecret:    os.Getenv("SAKURACLOUD_ACCESS_TOKEN_SECRET"),
-		HTTPClient:           &http.Client{Transport: http.DefaultTransport},
+		HTTPClient:           httpClient,
 		HTTPRequestRateLimit: 5,
+		OpenTelemetry:        os.Getenv("TRACE") != "",
 		UserAgent:            fmt.Sprintf("sacloud/gqlp/v%s (+https://github.com/sacloud/gqlp) libsacloud/%s", version.Version, libsacloud.Version),
 	})
 }

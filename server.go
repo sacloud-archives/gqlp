@@ -19,6 +19,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sacloud/gqlp/trace"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/sacloud/gqlp/graph"
@@ -30,7 +32,7 @@ func Serve(port string) error {
 		port = ":" + port
 	}
 	http.Handle("/", PlaygroundHandler("/query"))
-	http.Handle("/query", GraphQLQueryHandler())
+	http.Handle("/query", GraphQLQueryWithTraceHandler())
 
 	log.Printf("connect to http://localhost%s/ for GraphQL playground", port)
 	return http.ListenAndServe(port, nil)
@@ -42,4 +44,17 @@ func PlaygroundHandler(gqlQueryEndpoint string) http.Handler {
 
 func GraphQLQueryHandler() http.Handler {
 	return handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+}
+
+func GraphQLQueryWithTraceHandler() http.Handler {
+	return traceHandler(GraphQLQueryHandler())
+}
+
+func traceHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, span := trace.Tracer.Start(r.Context(), "sacloud/gqlp")
+		defer span.End()
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
