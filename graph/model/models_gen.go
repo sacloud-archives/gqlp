@@ -17,7 +17,7 @@
 package model
 
 type Disk struct {
-	ID          string   `json:"id"`
+	ID          int64    `json:"id"`
 	Name        string   `json:"name"`
 	Tags        []string `json:"tags"`
 	Description string   `json:"description"`
@@ -29,14 +29,14 @@ type MutationResult struct {
 }
 
 type Server struct {
-	ID               string   `json:"id"`
+	ID               int64    `json:"id"`
 	Name             string   `json:"name"`
 	Tags             []string `json:"tags"`
 	Description      string   `json:"description"`
 	Availability     string   `json:"availability"`
 	HostName         string   `json:"hostName"`
 	InterfaceDriver  string   `json:"interfaceDriver"`
-	PlanID           string   `json:"planID"`
+	PlanID           int64    `json:"planID"`
 	PlanName         string   `json:"planName"`
 	CPU              int      `json:"cpu"`
 	Memory           int      `json:"memory"`

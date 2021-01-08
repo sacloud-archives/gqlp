@@ -28,14 +28,14 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
-func (r *mutationResolver) ShutdownServer(ctx context.Context, zone string, id string, option *model.ShutdownOption) (*model.MutationResult, error) {
+func (r *mutationResolver) ShutdownServer(ctx context.Context, zone string, id int64, option *model.ShutdownOption) (*model.MutationResult, error) {
 	caller := r.APICaller()
 	serverOp := sacloud.NewServerOp(caller)
 	opt := &sacloud.ShutdownOption{}
 	if option != nil && option.Force {
 		opt.Force = true
 	}
-	return r.MutationResult(serverOp.Shutdown(ctx, zone, types.StringID(id), opt))
+	return r.MutationResult(serverOp.Shutdown(ctx, zone, types.ID(id), opt))
 }
 
 func (r *queryResolver) Servers(ctx context.Context, zone string) ([]*model.Server, error) {
@@ -48,14 +48,14 @@ func (r *queryResolver) Servers(ctx context.Context, zone string) ([]*model.Serv
 	var servers []*model.Server
 	for _, s := range results.Servers {
 		servers = append(servers, &model.Server{
-			ID:               s.ID.String(),
+			ID:               s.ID.Int64(),
 			Name:             s.Name,
 			Tags:             s.Tags,
 			Description:      s.Description,
 			Availability:     string(s.Availability),
 			HostName:         s.HostName,
 			InterfaceDriver:  s.InterfaceDriver.String(),
-			PlanID:           s.ServerPlanID.String(),
+			PlanID:           s.ServerPlanID.Int64(),
 			PlanName:         s.ServerPlanName,
 			CPU:              s.CPU,
 			Memory:           s.GetMemoryGB(),
@@ -77,7 +77,7 @@ func (r *serverResolver) Disks(ctx context.Context, obj *model.Server) ([]*model
 
 	results, err := diskOp.Find(ctx, zone, &sacloud.FindCondition{
 		Filter: search.Filter{
-			search.Key("Server.ID"): search.ExactMatch(obj.ID),
+			search.Key("Server.ID"): search.OrEqual(obj.ID),
 		},
 	})
 	if err != nil {
@@ -85,9 +85,9 @@ func (r *serverResolver) Disks(ctx context.Context, obj *model.Server) ([]*model
 	}
 	var disks []*model.Disk
 	for _, d := range results.Disks {
-		if d.ServerID.String() == obj.ID {
+		if d.ServerID.Int64() == obj.ID {
 			disks = append(disks, &model.Disk{
-				ID:          d.ID.String(),
+				ID:          d.ID.Int64(),
 				Name:        d.Name,
 				Tags:        d.Tags,
 				Description: d.Description,

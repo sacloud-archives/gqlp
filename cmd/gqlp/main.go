@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/sacloud/gqlp"
+	"github.com/sacloud/gqlp/trace"
 )
 
 const defaultPort = "8080"
@@ -27,6 +28,18 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
+	}
+
+	enableTrace := os.Getenv("TRACE")
+	if enableTrace != "" {
+		if endpoint := os.Getenv("JAEGER_ENDPOINT"); endpoint == "" {
+			os.Setenv("JAEGER_ENDPOINT", "http://localhost:14268/api/traces") // nolint
+		}
+		if sn := os.Getenv("JAEGER_SERVICE_NAME"); sn == "" {
+			os.Setenv("JAEGER_SERVICE_NAME", "gqlp") // nolint
+		}
+		flush := trace.InitTracer()
+		defer flush()
 	}
 
 	log.Fatal(gqlp.Serve(port))
